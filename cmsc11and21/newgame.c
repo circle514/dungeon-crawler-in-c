@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-//make it summon monsters at createdungeon not when needed 4/3/2026
+//make it summon monsters at createdungeon not when needed 4/3/2026 DONE
 
 typedef struct entity entity;
 typedef struct dungeonFloor dungeonFloor;
@@ -89,6 +89,10 @@ void move(dungeonFloor **current, int direction) {
         }
     }
 }
+
+//If you could work on the battle function that would be awesome
+//It has a choice dialogue
+//[1] Attack, [2] Run away, [3] Drink a health potion (if hpotion > 0 ofc)
 
 int battle(int *hpotion, dungeonFloor *floor, entity *Player) {
     return 1;
