@@ -107,12 +107,12 @@ int battle(int *hpotion, dungeonFloor *floor, entity *Player) {
 //and come back to it later you cannot kill the monster again, same with shop (you cant
 //buy something you've already bought)
 
-//Player and Monster Battling: NOT DONE
+//Player and Monster Battling: NOT DONE 
 //Players and monsters are entities, monsters are given inversely proportional health and strength
 //If a monster is killed, the player gains 10 gold which can be used to buy a healing potion or to heal to full
 //Coins are used for buying upgrades in the shop
 
-//Storing of floor state: NOT DONE
+//Storing of floor state: DONE
 //You cannot go back to a room where you killed a monster and kill it again, same for shops
 
 //Shop: NOT DONE
