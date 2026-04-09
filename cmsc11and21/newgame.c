@@ -36,7 +36,7 @@ entity *createMonster(int index) {
     Monster->name = monsterTable[index].name;
     Monster->health = monsterTable[index].health;
     Monster->strength = monsterTable[index].strength;
-    Monster->type = index; // 👈 store index
+    Monster->type = index;
     return Monster;
 }
 
