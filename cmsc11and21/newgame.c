@@ -2,14 +2,11 @@
 #include <stdlib.h>
 #include <time.h>
 
-//make it summon monsters at createdungeon not when needed 4/3/2026 DONE
-
 typedef struct entity entity;
 typedef struct dungeonFloor dungeonFloor;
 
 typedef struct dungeonFloor {
     int floorNum;
-    //1 is yes, 0 is no
     int hasMonster;
     int hasShop;
     entity *Monster;
@@ -21,9 +18,13 @@ typedef struct entity {
     char *name;
     int health;
     int strength;
+    int hpotion;
+    int gold;
+    int type; 
 } entity;
 
-//Its my first time using it this thing is so cool
+int killbook[3][2] = {0};
+
 entity monsterTable[] = {
     {"Skeleton", 100, 10},
     {"Zombie", 150, 5},
@@ -35,6 +36,7 @@ entity *createMonster(int index) {
     Monster->name = monsterTable[index].name;
     Monster->health = monsterTable[index].health;
     Monster->strength = monsterTable[index].strength;
+    Monster->type = index; // 👈 store index
     return Monster;
 }
 
@@ -43,8 +45,8 @@ int choice(dungeonFloor *current) {
     printf("You are in floor %d\n", current->floorNum);
     printf("[1] Move forwards\n");
     printf("[2] Move backwards\n");
-    if (current->hasMonster == 1) { printf("[3] Enter the monster room\n"); }
-    if (current->hasShop == 1) { printf("[4] Enter the Shop\n"); }
+    if (current->hasMonster == 1) printf("[3] Enter the monster room\n");
+    if (current->hasShop == 1) printf("[4] Enter the Shop\n");
     scanf("%d", &choice);
     return choice;
 }
@@ -58,11 +60,13 @@ dungeonFloor* createDungeon() {
 
         floor->floorNum = i;
         floor->hasMonster = rand() % 2;
+
         if (floor->hasMonster == 1) {
             floor->Monster = createMonster(rand() % 3);
         } else {
             floor->Monster = NULL;
         }
+
         floor->hasShop = rand() % 2;
         floor->next = NULL;
         floor->prev = NULL;
@@ -78,77 +82,171 @@ dungeonFloor* createDungeon() {
     return head;
 }
 
+void printDungeonRecursive(dungeonFloor *floor) {
+    if (floor == NULL) return;
+    printf("Floor %d | ", floor->floorNum);
+
+    if (floor->hasMonster && floor->Monster != NULL) {
+        printf("Monster: %s | ", floor->Monster->name);
+    } else {
+        printf("Monster: None | ");
+    }
+
+    printf("Shop: %s\n", floor->hasShop ? "Yes" : "No");
+    printDungeonRecursive(floor->next); 
+}
+
 void move(dungeonFloor **current, int direction) {
     if (direction == 0) {
-        if ((*current)->next != NULL) {
+        if ((*current)->next != NULL)
             *current = (*current)->next;
-        }
     } else if (direction == 1) {
-        if ((*current)->prev != NULL) {
+        if ((*current)->prev != NULL)
             *current = (*current)->prev; 
+    }
+}
+
+int battle(dungeonFloor *floor, entity *Player) {
+    
+    if (floor->Monster == NULL) {
+        printf("There is no monster here.\n");
+        return 0;
+    }
+    
+    entity *Monster = floor->Monster;
+    printf("You encounter a %s! (HP: %d | STR: %d)\n", Monster->name, Monster->health, Monster->strength);
+
+    while (Monster->health > 0 && Player->health > 0) {
+        printf("\n--- Your HP: %d | %s HP: %d ---\n", Player->health, Monster->name, Monster->health);
+        printf("[1] Attack\n");
+        printf("[2] Run away\n");
+        if (Player->hpotion > 0)
+            printf("[3] Drink health potion (%d left)\n", Player->hpotion);
+
+        int c;
+        scanf("%d", &c);
+
+        if (c == 1) {
+            Monster->health -= Player->strength;
+            printf("You dealt %d damage!\n", Player->strength);
+
+            if (Monster->health > 0) {
+                Player->health -= Monster->strength;
+                printf("%s dealt %d damage!\n", Monster->name, Monster->strength);
+            }
+
+        } else if (c == 2) {
+            printf("You ran away!\n");
+            return 0;
+
+        } else if (c == 3 && Player->hpotion > 0) {
+            Player->health += 30;
+            Player->hpotion--;
+            printf("You drank a potion!\n");
+
+            Player->health -= Monster->strength;
+            printf("%s dealt %d damage!\n", Monster->name, Monster->strength);
+        }
+    }
+
+    if (Monster->health <= 0) {
+        printf("%s has been defeated!\n", Monster->name);
+        Player->gold += 40;
+        floor->hasMonster = 0;
+
+        killbook[Monster->type][1]++;
+
+        return 1;
+    }
+
+    if (Player->health <= 0) {
+        printf("You died...\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+void shop(entity *player) {
+    int c;
+
+    while (1) {
+        printf("\n=== SHOP ===\n");
+        printf("Gold: %d\n", player->gold);
+        printf("[1] Heal +50 (10g)\n");
+        printf("[2] +10 Strength (20g)\n");
+        printf("[3] +1 Potion (5g)\n");
+        printf("[4] Exit\n");
+        scanf("%d", &c);
+
+        if (c == 1 && player->gold >= 10) {
+            player->health += 50;
+            player->gold -= 10;
+        }
+        else if (c == 2 && player->gold >= 20) {
+            player->strength += 10;
+            player->gold -= 20;
+        }
+        else if (c == 3 && player->gold >= 5) {
+            player->hpotion += 1;
+            player->gold -= 5;
+        }
+        else if (c == 4) {
+            return;
+        }
+        else {
+            printf("Invalid.\n");
         }
     }
 }
 
-//If you could work on the battle function that would be awesome
-//It has a choice dialogue
-//[1] Attack, [2] Run away, [3] Drink a health potion (if hpotion > 0 ofc)
-
-int battle(int *hpotion, dungeonFloor *floor, entity *Player) {
-    return 1;
-}
-
-//Dungeon Crawler Game
-
-//Room Traversal: DONE (the storing of floor state is not done but thats after battling)
-//The dungeon has 20 floors (nodes) each floor has a random number of rooms (1-2)
-//The last floor is a boss room and the game ends when you kill it
-//You can traverse floors forward or backwards but if a room has a monster and you kill it
-//and come back to it later you cannot kill the monster again, same with shop (you cant
-//buy something you've already bought)
-
-//Player and Monster Battling: NOT DONE 
-//Players and monsters are entities, monsters are given inversely proportional health and strength
-//If a monster is killed, the player gains 10 gold which can be used to buy a healing potion or to heal to full
-//Coins are used for buying upgrades in the shop
-
-//Storing of floor state: DONE
-//You cannot go back to a room where you killed a monster and kill it again, same for shops
-
-//Shop: NOT DONE
-//You can buy healing potions that restore a set amount of health or heal to full
-//You can also buy a strength potion that permanently increases your strength
-//You can only buy once from a shop
-
-//Boss Room: NOT DONE
-//Game ends when you kill the boss
-
-//Kill book: NOT DONE
-//If you beat the boss or die prematurely it shows a record of the monsters you've killed
-//Uses the index given to monsters and a multi dimensional array to store kills
-
 int main() {
     srand(time(NULL));
+
+    for (int i = 0; i < 3; i++) {
+        killbook[i][0] = i;
+    }
+
     dungeonFloor *start = createDungeon();
+    printDungeonRecursive(start);
+    printf("\n");
     int flag = 1;
-    int hpotion = 0; //This should be in a player struct but whatever 
 
     entity *Player = malloc(sizeof(entity));
     Player->health = 100;
     Player->strength = 10;
+    Player->hpotion = 2;
+    Player->gold = 20;
 
     while (flag) {
         int c = choice(start);
+
         if (c == 1) {
             move(&start, 0);
+            printf("\n");
         } else if (c == 2) {
             move(&start, 1);
-        } else if (c == 3) {
-            printf("You encounter a %s...\n\n", start->Monster->name);
-            int outcome = battle(&hpotion, start, Player);
+            printf("\n");
+        } else if (c == 3 && start->Monster != NULL) {
+            int outcome = battle(start, Player);
+            printf("\n");
+            if (outcome == -1) {
+                flag = 0;
+            }
+        } else if (c == 4 && start->hasShop == 1) {
+            shop(Player);
+            start->hasShop = 0;
         }
     }
 
-    free(start);
+    printf("\n=== KILLBOOK ===\n");
+    for (int i = 0; i < 3; i++) {
+        printf("%s kills: %d\n",
+            monsterTable[killbook[i][0]].name,
+            killbook[i][1]);
+    }
+
     free(Player);
+    free(start);
+    return 0;
 }
