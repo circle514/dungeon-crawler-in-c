@@ -44,6 +44,8 @@ Functions:
 
   shop:
     Input: *player, in order to properly edit health and strength when player heals or improves strength
+
+  #I have no idea how to properly format a readme
   
   
   
